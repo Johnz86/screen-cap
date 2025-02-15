@@ -1,0 +1,68 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*' # Trigger on tags like v1.0.0, v1.2, etc.
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [
+          "x86_64-unknown-linux-gnu",
+          "x86_64-pc-windows-msvc"
+        ]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: ${{ matrix.target }}
+
+      - name: Build
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Strip binaries (Linux)
+        if: matrix.target == 'x86_64-unknown-linux-gnu'
+        run: strip target/${{ matrix.target }}/release/screen-cap
+
+      - name: Compress binaries (Linux)
+        if: matrix.target == 'x86_64-unknown-linux-gnu'
+        run: tar -czvf screen-cap-linux-amd64.tar.gz target/${{ matrix.target }}/release/screen-cap
+
+      - name: Compress binaries (Windows)
+        if: matrix.target == 'x86_64-pc-windows-msvc'
+        run: zip screen-cap-windows-amd64.zip target/${{ matrix.target }}/release/screen-cap.exe
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+
+      - name: Upload Release Assets (Linux)
+        if: matrix.target == 'x86_64-unknown-linux-gnu'
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: screen-cap-linux-amd64.tar.gz
+          asset_name: screen-cap-linux-amd64.tar.gz
+          asset_content_type: application/gzip
+
+      - name: Upload Release Assets (Windows)
+        if: matrix.target == 'x86_64-pc-windows-msvc'
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: screen-cap-windows-amd64.zip
+          asset_name: screen-cap-windows-amd64.zip
+          asset_content_type: application/zip

@@ -1,0 +1,10 @@
+[package]
+name = "screen-cap"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+xcap = "0.3.1"
+image = { version = "0.24.6", default-features = false, features = ["webp"] }
+chrono = "0.4.31"
+clap = { version = "4.5.29", features = ["derive"] }
