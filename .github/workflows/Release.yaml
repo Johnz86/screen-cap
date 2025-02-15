@@ -3,16 +3,16 @@ name: Release
 on:
   push:
     tags:
-      - 'v*' # Trigger on tags like v1.0.0, v1.2, etc.
+      - 'v*'
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest 
     strategy:
       matrix:
-        target: [
-          "x86_64-unknown-linux-gnu",
-          "x86_64-pc-windows-msvc"
+        build_target: [
+          { target: "x86_64-unknown-linux-gnu", os: "linux" },
+          { target: "x86_64-pc-windows-msvc", os: "windows" }
         ]
 
     steps:
@@ -22,22 +22,32 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-          target: ${{ matrix.target }}
+          target: ${{ matrix.build_target.target }}
+
+      - name: Install Visual Studio Build Tools
+        if: matrix.build_target.os == 'windows'
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Install Linux dependencies
+        if: matrix.build_target.os == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libdbus-1-dev pkg-config
 
       - name: Build
-        run: cargo build --release --target ${{ matrix.target }}
+        run: cargo build --release --target ${{ matrix.build_target.target }}
 
       - name: Strip binaries (Linux)
-        if: matrix.target == 'x86_64-unknown-linux-gnu'
-        run: strip target/${{ matrix.target }}/release/screen-cap
+        if: matrix.build_target.os == 'linux'
+        run: strip target/${{ matrix.build_target.target }}/release/screen-cap
 
       - name: Compress binaries (Linux)
-        if: matrix.target == 'x86_64-unknown-linux-gnu'
-        run: tar -czvf screen-cap-linux-amd64.tar.gz target/${{ matrix.target }}/release/screen-cap
+        if: matrix.build_target.os == 'linux'
+        run: tar -czvf screen-cap-linux-amd64.tar.gz target/${{ matrix.build_target.target }}/release/screen-cap
 
       - name: Compress binaries (Windows)
-        if: matrix.target == 'x86_64-pc-windows-msvc'
-        run: zip screen-cap-windows-amd64.zip target/${{ matrix.target }}/release/screen-cap.exe
+        if: matrix.build_target.os == 'windows'
+        run: zip screen-cap-windows-amd64.zip target/${{ matrix.build_target.target }}/release/screen-cap.exe
 
       - name: Create Release
         id: create_release
@@ -50,7 +60,7 @@ jobs:
           draft: false
 
       - name: Upload Release Assets (Linux)
-        if: matrix.target == 'x86_64-unknown-linux-gnu'
+        if: matrix.build_target.os == 'linux'
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
@@ -59,7 +69,7 @@ jobs:
           asset_content_type: application/gzip
 
       - name: Upload Release Assets (Windows)
-        if: matrix.target == 'x86_64-pc-windows-msvc'
+        if: matrix.build_target.os == 'windows'
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
