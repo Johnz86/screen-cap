@@ -1,6 +1,6 @@
 [package]
 name = "screen-cap"
-version = "0.1.5"
+version = "0.1.6"
 edition = "2021"
 
 [dependencies]
@@ -12,7 +12,7 @@ clap = { version = "4.5.29", features = ["derive"] }
 [target.'cfg(target_os = "linux")'.dependencies]
 dbus = { version = "0.9", features = ["vendored"] }
 percent-encoding = "2.3"
-xcb = { version = "1.5", features = ["randr"] }
+xcb = { version = "1.5", features = ["randr"] } 
 
 [target.'cfg(target_os = "windows")'.dependencies]
 widestring = "1.1"
