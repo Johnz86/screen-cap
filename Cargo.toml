@@ -1,6 +1,6 @@
 [package]
 name = "screen-cap"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 
 [dependencies]
@@ -10,7 +10,7 @@ chrono = "0.4.31"
 clap = { version = "4.5.29", features = ["derive"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
-dbus = "0.9"
+dbus = { version = "0.9", features = ["vendored"] }
 percent-encoding = "2.3"
 xcb = { version = "1.5", features = ["randr"] }
 
