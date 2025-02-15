@@ -57,13 +57,17 @@ fn find_window(title_contains: &str) -> Option<Window> {
 }
 
 fn capture_and_save_screenshot(window: &Window, target_dir: &str) -> Result<(), String> {
+    if window.is_minimized() {
+        println!("Window is minimized. Skipping screenshot.");
+        return Ok(()); // Skip capturing if minimized
+    }
+
     let screenshot: ImageBuffer<xcap::image::Rgba<u8>, Vec<u8>> = window.capture_image().map_err(|e| e.to_string())?;
 
     let width = screenshot.width();
     let height = screenshot.height();
     let pixels = screenshot.into_raw();
 
-    // Create RgbaImage directly
     let dynamic_image = match RgbaImage::from_raw(width, height, pixels) {
         Some(img) => image::DynamicImage::ImageRgba8(img),
         None => return Err("Failed to create RgbaImage".to_string()),
@@ -73,8 +77,8 @@ fn capture_and_save_screenshot(window: &Window, target_dir: &str) -> Result<(), 
     let filename = format!("{}/screenshot_{}.webp", target_dir, timestamp);
 
     dynamic_image
-        .save_with_format(&filename, image::ImageFormat::WebP)
-        .map_err(|e| e.to_string())?;
+      .save_with_format(&filename, image::ImageFormat::WebP)
+      .map_err(|e| e.to_string())?;
 
     Ok(())
 }
